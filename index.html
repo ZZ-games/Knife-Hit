@@ -34667,6 +34667,20 @@ var LANGUAGE_EN = 0
   , TEXT_KNIFEUNLOCKED = "BossKnifeUnlockedKey"
   , TEXT_RESTART = "RestartKey"
   , TEXT_MORE_GAMES = "MORE_GAMES";
+function miniplaySend2API() {}
+// Ignore the duplicate event some devices send for a single tap
+// (a touch followed by a copy as a mouse event, or vice versa).
+var lastThrowInput = { time: -1e9, kind: null };
+function throwInputAllowed(ev) {
+    var kind = 'key';
+    if (ev && ev.pointerType) kind = ev.pointerType === 'mouse' ? 'mouse' : 'touch';
+    else if (ev && ev.type) kind = ev.type.indexOf('touch') === 0 ? 'touch' : (ev.type.indexOf('mouse') === 0 ? 'mouse' : 'key');
+    var now = Date.now(), gap = now - lastThrowInput.time;
+    if (gap < 40 || (kind !== lastThrowInput.kind && gap < 500)) return false;
+    lastThrowInput = { time: now, kind: kind };
+    return true;
+}
+
 function analyticsOnLevelStartEvent(a) {}
 function analyticsOnLevelFinish() {}
 ;var GameData = function() {};
@@ -37499,7 +37513,8 @@ GamePlay.prototype = {
         }, 150, Phaser.Easing.Linear.None, !0, 50);
         this.activePin = a
     },
-    fireKnife: function() {
+    fireKnife: function(ptr, ev) {
+        if (!throwInputAllowed(ev)) return;
         appState === APP_STATES.GAME_RUNNING && null !== this.activePin && (this.activePin.move = !0,
         this.activePin.comingTwn.isRunning && (this.activePin.comingTwn.stop(),
         this.activePin.body.y = gamePlay.pinStartPosition - this.activePin.height - 10),
